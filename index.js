@@ -1,19 +1,29 @@
+const http      = require('http');  
 const WebSocket = require('ws');  
-
-const wss = new WebSocket.Server({ port: 8080 }, () => {  
-  console.log('WebSocket server running on ws://localhost:8080');  
+  
+const PORT = process.env.PORT || 8080;  
+  
+// 1) Create an HTTP server  
+const server = http.createServer((req, res) => {  
+  if (req.method === 'GET' && req.url === '/') {  
+    // Simple health check  
+    res.writeHead(200, { 'Content-Type': 'text/plain' });  
+    return res.end('OK');  
+  }  
+  
+  // You can handle other HTTP routes here if you like...  
+  res.writeHead(404);  
+  res.end();  
 });  
-
-wss.on('connection', (ws, req) => {  
-  console.log('Client connected:', req.socket.remoteAddress);  
+  
+// 2) Attach WebSocket to that same server  
+const wss = new WebSocket.Server({ server });  
+wss.on('connection', ws => {  
   ws.send('Hello from server!');  
-
-  ws.on('message', message => {  
-    console.log('Received:', message);  
-    ws.send(`Server received: ${message}`);  
-  });  
-
-  ws.on('close', (code, reason) => {  
-    console.log('Client disconnected:', code, reason);  
-  });  
+  ws.on('message', msg => ws.send(`Echo: ${msg}`));  
+});  
+  
+// 3) Listen on the Render-assigned port  
+server.listen(PORT, () => {  
+  console.log(`Listening on port ${PORT}`);  
 });  
